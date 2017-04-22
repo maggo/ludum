@@ -1,10 +1,33 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- Finish map: A Ludum Dare adventure
+-- by maggo
+-- based on:
 -- wall and actor collisions
 -- by zep
 
 actor = {} --all actors in world
+dialog = {
+  active = true,
+  id = 1,
+  sentence = 1,
+  counter = 0,
+  char = 1,
+  animating = true
+}
+
+dialogs = {
+  {
+    "You wake up on a lonely island",
+    "How did you get here?",
+    "How do you leave?",
+    "There's a shed near you, \nin there is a raft",
+    "But how will you get in?",
+    "Welcome to:",
+    "           Finish Map \n    A Ludum Dare Adventure..."
+  }
+}
 
 -- make an actor
 -- and add to global collection
@@ -55,7 +78,6 @@ function solid(x, y)
  -- orange toggle button in the
  -- sprite editor)
  return fget(val, 1)
-
 end
 
 -- solid_area
@@ -73,7 +95,6 @@ function solid_area(x,y,w,h)
   solid(x-w,y+h) or
   solid(x+w,y+h)
 end
-
 
 -- true if a will hit another
 -- actor after moving dx,dy
@@ -113,7 +134,6 @@ function solid_actor(a, dx, dy)
  end
  return false
 end
-
 
 -- checks both walls and actors
 function solid_a(a, dx, dy)
@@ -183,12 +203,54 @@ function control_player(pl)
      and (pl.t%4) == 0) then
   sfx(1)
  end
+end
 
+function draw_dialog()
+  color(7)
+  print(sub(dialogs[dialog.id][dialog.sentence], 0, dialog.char), 0, 106)
+end
+
+function update_dialog()
+  -- button press advances text
+  if (btnp(4)) then
+    if (dialog.animating) then
+      dialog.animating = false
+      dialog.char = #dialogs[dialog.id][dialog.sentence]
+    else
+      dialog.sentence += 1
+      dialog.char = 1
+      dialog.animating = true
+    end
+  end
+
+  if (dialog.sentence > #dialogs[dialog.id]) then
+    -- End the current dialog
+    dialog.active = false
+    dialog.id = 1
+    dialog.sentence = 1
+    dialog.counter = 0
+  end
+
+  if (dialog.animating) then
+    dialog.counter += 1
+
+    if (dialog.counter >= 2) then
+      dialog.char += 1
+      dialog.counter = 0
+      sfx(0)
+    end
+
+    if (dialog.char >= #dialogs[dialog.id][dialog.sentence]) dialog.animating = false
+  end
 end
 
 function _update()
- control_player(pl)
- foreach(actor, move_actor)
+  if (dialog.active) then
+    update_dialog()
+  else
+    control_player(pl)
+    foreach(actor, move_actor)
+  end
 end
 
 function draw_actor(a)
@@ -201,7 +263,12 @@ function _draw()
   cls()
   map(0,0,0,0,16,16)
   foreach(actor,draw_actor)
+
+  if (dialog.active) then
+    draw_dialog()
+  end
 end
+
 function zspr(n,w,h,dx,dy,dz)
   sx = 8 * (n % 16)
   sy = 8 * flr(n / 16)
@@ -380,7 +447,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010300001005510000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -509,3 +576,4 @@ __music__
 00 41424344
 00 41424344
 00 41424344
+
